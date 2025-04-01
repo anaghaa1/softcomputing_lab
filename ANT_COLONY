@@ -1,0 +1,132 @@
+import numpy as np
+import random
+
+
+def euclidean_distance(city1, city2):
+    return np.sqrt((city1[0] - city2[0]) ** 2 + (city1[1] - city2[1]) ** 2)
+
+class AntColonyOptimization:
+    def __init__(self, cities, num_ants, num_iterations, alpha, beta, rho, q0):
+        self.cities = cities
+        self.num_cities = len(cities)
+        self.num_ants = num_ants  # Number of ants
+        self.num_iterations = num_iterations  # Number of iterations
+        self.alpha = alpha  # Influence of pheromone
+        self.beta = beta  # Influence of heuristic (distance)
+        self.rho = rho  # Rate of pheromone evaporation
+        self.q0 = q0  # Probability for the exploitation vs exploration
+        self.pheromone_matrix = np.ones((self.num_cities, self.num_cities))  # Initial pheromone levels
+        self.distance_matrix = np.zeros((self.num_cities, self.num_cities))  # Distance between cities
+        
+        
+        for i in range(self.num_cities):
+            for j in range(i + 1, self.num_cities):
+                dist = euclidean_distance(self.cities[i], self.cities[j])
+                self.distance_matrix[i][j] = dist
+                self.distance_matrix[j][i] = dist
+
+    def probability(self, i, j, visited, pheromone_matrix, distance_matrix):
+       
+        pheromone = pheromone_matrix[i][j] ** self.alpha
+        heuristic = (1.0 / distance_matrix[i][j]) ** self.beta if distance_matrix[i][j] > 0 else 0
+        return pheromone * heuristic
+
+    def generate_solution(self):
+        
+        visited = [False] * self.num_cities
+        start_city = random.randint(0, self.num_cities - 1)
+        path = [start_city]
+        visited[start_city] = True
+        
+        for _ in range(self.num_cities - 1):
+            current_city = path[-1]
+            next_city = self.choose_next_city(current_city, visited)
+            path.append(next_city)
+            visited[next_city] = True
+            
+        return path
+
+    def choose_next_city(self, current_city, visited):
+        
+        probabilities = []
+        total_prob = 0.0
+        for i in range(self.num_cities):
+            if not visited[i]:
+                prob = self.probability(current_city, i, visited, self.pheromone_matrix, self.distance_matrix)
+                probabilities.append(prob)
+                total_prob += prob
+            else:
+                probabilities.append(0.0)
+        
+        
+        if random.random() < self.q0:  # Exploitation (choose the best path)
+            next_city = np.argmax(probabilities)
+        else:  
+            probabilities = [prob / total_prob for prob in probabilities]
+            next_city = np.random.choice(range(self.num_cities), p=probabilities)
+        
+        return next_city
+
+    def update_pheromones(self, paths, lengths):
+        
+       
+        self.pheromone_matrix *= (1 - self.rho)
+        
+  
+        for path, length in zip(paths, lengths):
+            pheromone_deposit = 1.0 / length
+            for i in range(len(path) - 1):
+                self.pheromone_matrix[path[i]][path[i+1]] += pheromone_deposit
+            self.pheromone_matrix[path[-1]][path[0]] += pheromone_deposit  # Close the loop
+
+    def optimize(self):
+        best_path = None
+        best_length = float('inf')
+        
+        for _ in range(self.num_iterations):
+            paths = []
+            lengths = []
+            
+            
+            for _ in range(self.num_ants):
+                path = self.generate_solution()
+                length = self.calculate_path_length(path)
+                paths.append(path)
+                lengths.append(length)
+                
+                
+                if length < best_length:
+                    best_length = length
+                    best_path = path
+
+            
+            self.update_pheromones(paths, lengths)
+            print(f"Best path length so far: {best_length}")
+        
+        return best_path, best_length
+
+    def calculate_path_length(self, path):
+        
+        length = 0.0
+        for i in range(len(path) - 1):
+            length += self.distance_matrix[path[i]][path[i+1]]
+        length += self.distance_matrix[path[-1]][path[0]]  # Close the loop
+        return length
+
+
+cities = [(0, 0), (1, 2), (3, 1), (5, 4), (6, 2)]
+
+
+aco = AntColonyOptimization(
+    cities=cities, 
+    num_ants=10, 
+    num_iterations=100,  
+    alpha=1.0,  
+    beta=2.0,
+    rho=0.1, 
+    q0=0.9   
+)
+
+best_path, best_length = aco.optimize()
+print(f"Optimal Path: {best_path}")
+print(f"Optimal Path Length: {best_length}")
