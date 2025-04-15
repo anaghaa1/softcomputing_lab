@@ -1,0 +1,29 @@
+import numpy as np
+
+class HebbianNetwork:
+    def __init__(self, input_size, output_size):
+       
+        self.weights = np.zeros((output_size, input_size))
+
+    def train(self, X, Y):
+        
+        for x, y in zip(X, Y):
+            x = x.reshape(1, -1)      
+            y = y.reshape(-1, 1)     
+            self.weights += y @ x      
+
+    def predict(self, x): 
+        return np.dot(self.weights, x)
+X = np.array([
+    [1, 1, -1],   
+    [-1, -1, 1]  
+])
+Y = np.array([
+    [1, -1],    
+    [-1, 1]      
+])
+net = HebbianNetwork(input_size=3, output_size=2)
+net.train(X, Y)
+for i, x in enumerate(X):
+    output = net.predict(x)
+    print(f"Input {i+1}: {x}, Predicted Output: {output}")
