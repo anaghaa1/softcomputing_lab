@@ -1,0 +1,25 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.datasets import load_iris
+iris = load_iris()
+df = pd.DataFrame(data=iris.data, columns=iris.feature_names)
+df['species'] = iris.target_names[iris.target]
+def classify(row):
+    if row['sepal length (cm)'] <= 5.0 and row['sepal width (cm)'] >= 3.0:
+        return 'setosa'
+    elif 5.0 < row['sepal length (cm)'] <= 6.5 and 2.5 < row['sepal width (cm)'] <= 3.5:
+        return 'versicolor'
+    else:
+        return 'virginica'
+df['predicted_species'] = df.apply(classify, axis=1)
+plt.figure(figsize=(10, 6))
+plt.scatter(df['sepal length (cm)'], df['sepal width (cm)'], c=df['predicted_species'].map({'setosa': 'red', 'versicolor': 'green', 'virginica': 'blue'}))
+plt.xlabel('Sepal Length (cm)')
+plt.ylabel('Sepal Width (cm)')
+plt.title('Crisp Classification of Iris Species')
+plt.show()
+threshold=2.5
+crisp_set = df[df['petal length (cm)'] > threshold]
+print("Crisp set (samples with petal length > 2.5 cm):")
+print(crisp_set)
+
