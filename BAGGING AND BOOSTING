@@ -1,0 +1,44 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.ensemble import BaggingClassifier, GradientBoostingClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+file_path = '/content/hi.csv'
+data = pd.read_csv(file_path)
+data['Category'] = data['Category'].map({'ham': 0, 'spam': 1})
+vectorizer = CountVectorizer()
+X = vectorizer.fit_transform(data['Message'])
+y = data['Category']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+bagging_model = BaggingClassifier(estimator=DecisionTreeClassifier(), n_estimators=50, random_state=42)
+bagging_model.fit(X_train, y_train)
+y_pred_bagging = bagging_model.predict(X_test)
+boosting_model = GradientBoostingClassifier(n_estimators=50, random_state=42)
+boosting_model.fit(X_train, y_train)
+y_pred_boosting = boosting_model.predict(X_test)
+print("=== Bagging Model ===")
+print(f"Accuracy: {accuracy_score(y_test, y_pred_bagging):.4f}")
+print(classification_report(y_test, y_pred_bagging, target_names=['ham', 'spam']))
+
+print("\n=== Boosting Model ===")
+print(f"Accuracy: {accuracy_score(y_test, y_pred_boosting):.4f}")
+print(classification_report(y_test, y_pred_boosting, target_names=['ham', 'spam']))
+bagging_cm = confusion_matrix(y_test, y_pred_bagging)
+boosting_cm = confusion_matrix(y_test, y_pred_boosting)
+plt.figure(figsize=(12, 5))
+plt.subplot(1, 2, 1)
+sns.heatmap(bagging_cm, annot=True, fmt='d', cmap='Blues')
+plt.title('Bagging - Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+
+plt.subplot(1, 2, 2)
+sns.heatmap(boosting_cm, annot=True, fmt='d', cmap='Oranges')
+plt.title('Boosting - Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+
+plt.show()
